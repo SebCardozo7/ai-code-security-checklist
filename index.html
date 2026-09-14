@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shipping AI-Generated Code — A Pre-Production Security Checklist</title>
+<meta name="description" content="A working review checklist for code written by LLMs and coding agents, covering the failure modes that ordinary code review no longer catches.">
+<meta property="og:title" content="Shipping AI-Generated Code: A Pre-Production Security Checklist">
+<meta property="og:description" content="A working review checklist for code written by LLMs and coding agents.">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDEFF1; --surface:#F8F9FA; --ink:#1F2A37; --muted:#64717F;
+  --rule:#D3D8DD; --blocking:#9B2C2C; --high:#8A6014; --track:#46685B;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:'Newsreader',Georgia,'Times New Roman',serif;
+  font-size:18px; line-height:1.6; font-weight:400;
+}
+.wrap{max-width:43rem;margin:0 auto;padding:0 1.5rem}
+a{color:var(--ink);text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
+a:hover{color:var(--blocking)}
+:focus-visible{outline:2px solid var(--blocking);outline-offset:3px}
+
+header{padding:4.5rem 0 2rem}
+h1{font-size:2.6rem;line-height:1.1;font-weight:600;margin:0 0 1.25rem;letter-spacing:-.015em}
+.lede{font-size:1.15rem;color:var(--muted);margin:0 0 2rem;max-width:34rem}
+.intro p{margin:0 0 1.1rem}
+.intro{border-top:1px solid var(--rule);padding-top:2rem;margin-bottom:2.5rem}
+
+.meter{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--rule);padding:.7rem 0}
+.meter-in{max-width:43rem;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.count{font-size:.95rem;color:var(--muted);white-space:nowrap}
+.count b{color:var(--ink);font-weight:600}
+.bar{flex:1;min-width:6rem;height:3px;background:var(--rule);position:relative}
+.bar span{position:absolute;inset:0 auto 0 0;width:0;background:var(--track);transition:width .25s ease}
+.filters{display:flex;gap:.4rem}
+.filters button{
+  font-family:inherit;font-size:.85rem;background:none;color:var(--muted);
+  border:1px solid var(--rule);padding:.2rem .6rem;cursor:pointer;
+}
+.filters button[aria-pressed="true"]{color:var(--ink);border-color:var(--ink)}
+.reset{font-family:inherit;font-size:.85rem;background:none;border:none;color:var(--muted);cursor:pointer;text-decoration:underline;padding:0}
+
+section{margin:0 0 3rem}
+h2{font-size:1.4rem;font-weight:600;margin:0 0 1.2rem;display:flex;gap:.7rem;align-items:baseline}
+h2 .n{color:var(--muted);font-weight:300;font-size:1.1rem;flex:none}
+
+.item{display:flex;gap:.85rem;padding:.85rem 0;border-top:1px solid var(--rule);align-items:flex-start}
+.item:last-child{border-bottom:1px solid var(--rule)}
+.item input{
+  appearance:none;-webkit-appearance:none;flex:none;width:1.05rem;height:1.05rem;
+  margin:.35rem 0 0;border:1px solid var(--muted);background:var(--surface);cursor:pointer;
+}
+.item input:checked{background:var(--track);border-color:var(--track)}
+.item label{cursor:pointer}
+.item.done label{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--rule)}
+.sev{font-size:.72rem;letter-spacing:.04em;font-weight:600;display:inline-block;margin-right:.45rem;vertical-align:.08em}
+.sev-blocking{color:var(--blocking)}
+.sev-high{color:var(--high)}
+.sev-track{color:var(--track)}
+.hidden{display:none}
+
+table{width:100%;border-collapse:collapse;font-size:.95rem;margin:.5rem 0 0}
+th,td{text-align:left;padding:.5rem .6rem .5rem 0;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:600}
+td:last-child{color:var(--muted)}
+
+footer{border-top:1px solid var(--rule);padding:2.5rem 0 4rem;color:var(--muted);font-size:.95rem}
+footer ul{padding-left:1.1rem;margin:.5rem 0 1.5rem}
+footer li{margin-bottom:.3rem}
+
+@media (max-width:600px){
+  body{font-size:17px}
+  h1{font-size:2rem}
+  header{padding:3rem 0 1.5rem}
+  .filters{width:100%;order:3}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <h1>Shipping AI-generated code</h1>
+  <p class="lede">A review checklist for code written by LLMs and coding agents, aimed at the moment before it reaches production.</p>
+</header>
+
+<div class="meter">
+  <div class="meter-in">
+    <span class="count"><b id="done">0</b> of <b id="total">0</b> reviewed</span>
+    <div class="bar"><span id="fill"></span></div>
+    <div class="filters">
+      <button data-f="all" aria-pressed="true">All</button>
+      <button data-f="blocking" aria-pressed="false">Blocking</button>
+      <button data-f="high" aria-pressed="false">High</button>
+    </div>
+    <button class="reset" id="reset">Clear</button>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="intro">
+    <p>AI-generated code does not fail the way junior-developer code fails. It fails in a specific and predictable set of ways, and those are what this list targets.</p>
+    <p>It is fluent. It compiles, it reads well, it uses the right vocabulary, and it passes the tests written alongside it — often because those tests came from the same flawed understanding. Ordinary review leans on <em>does this look like someone who knew what they were doing wrote it</em>, and that signal no longer carries information.</p>
+    <p>It is plausible rather than verified. Models produce package names, API signatures, and configuration flags that look correct and sometimes do not exist. Attackers register the package names that models invent most often.</p>
+    <p>It optimizes for the happy path. Given a feature request, a model writes the feature. Authorization checks, rate limits, timeouts, and failure branches go missing, because nothing in the prompt asked for them.</p>
+    <p>It has no memory of your system. Constraints that live in a threat model, a runbook, or a senior engineer's head are not in the context window.</p>
+    <p>Run the automated checks in section 12 first; they clear about half of this in minutes. Then spend human attention on the rest. <strong>Blocking</strong> items stop a merge, <strong>High</strong> items stop a release, <strong>Track</strong> items get written down and scheduled. Progress is kept in this browser only.</p>
+  </div>
+  <div id="list"></div>
+
+  <section>
+    <h2><span class="n">12</span> Automate these</h2>
+    <p>Run before human review. Everything here is mechanical, and catching it by eye wastes an engineer.</p>
+    <table>
+      <tr><th>Check</th><th>Tools</th></tr>
+      <tr><td>Secret scanning</td><td>gitleaks, trufflehog</td></tr>
+      <tr><td>Dependency vulnerabilities</td><td>osv-scanner, Dependabot, npm audit, pip-audit</td></tr>
+      <tr><td>Static analysis</td><td>Semgrep, CodeQL</td></tr>
+      <tr><td>Container and IaC scanning</td><td>Trivy, Checkov, tfsec</td></tr>
+      <tr><td>License compliance</td><td>ScanCode, FOSSA</td></tr>
+      <tr><td>Type and lint gates</td><td>language-native, failing the build</td></tr>
+    </table>
+    <p style="margin-top:1.2rem">Two rules worth wiring specifically for generated code: a registry-existence check on every new dependency, and a check that flags new HTTP handlers lacking an authorization decorator or middleware.</p>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p>Further reading</p>
+  <ul>
+    <li><a href="https://csrc.nist.gov/pubs/sp/800/218/final">NIST SP 800-218, Secure Software Development Framework</a></li>
+    <li><a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/">OWASP Top 10 for LLM Applications</a></li>
+    <li><a href="https://loopstudio.dev/">What the NIST SSDF means for product teams</a> — LoopStudio</li>
+    <li><a href="https://loopstudio.dev/">Securing AI-built software before it goes to production</a> — LoopStudio</li>
+  </ul>
+  <p>MIT licensed. Corrections and additions welcome on <a href="https://github.com/USERNAME/ai-code-security-checklist">GitHub</a>.</p>
+</footer>
+
+<script>
+const DATA=[
+["Dependencies and supply chain",[
+["blocking","Every imported package exists and is the package intended. Search the registry by exact name — models hallucinate package names, and squatters register the popular hallucinations."],
+["blocking","No new dependency was added for something the codebase already does. Check for an existing internal utility first."],
+["high","Each new dependency has a plausible history: recent releases, an identifiable maintainer, download volume consistent with its claimed purpose."],
+["high","Versions are pinned and the lockfile is committed."],
+["high","A vulnerability scan has run against the new dependency tree."],
+["track","The dependency count is justified. Agents add libraries freely; the aggregate cost lands on whoever maintains this later."]]],
+["Secrets and configuration",[
+["blocking","No credentials, API keys, tokens, or connection strings in source — including comments, example files, fixtures, and test data."],
+["blocking","If a secret was ever committed, it is rotated. Removing it from the working tree does not remove it from history."],
+["high","Secrets are read from environment variables or a secret manager, not a config file in the repo."],
+["high","A secret scanner has run over the diff and the branch history."],
+["high","Debug flags, verbose logging, and permissive CORS settings introduced during development are off."]]],
+["Input handling and injection",[
+["blocking","Database access uses parameterized queries or an ORM's safe interface. No SQL assembled by string concatenation."],
+["blocking","Shell and subprocess calls pass arguments as arrays, never as an interpolated command string."],
+["blocking","Any file path derived from user input is resolved and confirmed to stay inside the intended directory."],
+["high","Untrusted data is not deserialized with formats that can instantiate arbitrary types."],
+["high","Template output is escaped by default, and any disabled escaping has a stated reason."],
+["high","Outbound requests built from user-supplied URLs validate the destination against an allowlist. Check webhooks, link previews, image fetchers, and imports specifically."],
+["high","Input validation happens server-side. Client-side validation the model added is a usability feature, not a control."]]],
+["Authentication and authorization",[
+["blocking","Every new route, handler, and RPC method has an explicit authorization check. This is the single most common gap in generated code."],
+["blocking","Object-level authorization is enforced: the handler confirms the resource belongs to the caller, not merely that the caller is logged in. Look at every endpoint accepting an ID."],
+["high","Authentication uses the framework's or provider's primitives. Hand-rolled token, session, or signature logic is rewritten."],
+["high","Session cookies are Secure, HttpOnly, and SameSite-scoped. Tokens have expiry and a revocation path."],
+["high","Privileged operations are not selected by a client-supplied role, flag, or parameter."],
+["track","Authorization logic is centralized rather than repeated per handler."]]],
+["Cryptography",[
+["blocking","No custom cryptographic construction. Hand-built encryption, signing, or key-derivation routines are replaced with a vetted library."],
+["blocking","Passwords are hashed with Argon2, scrypt, or bcrypt. Not SHA-256, not SHA-256 with a salt, not anything fast."],
+["high","Randomness for tokens, session IDs, nonces, and keys comes from a cryptographically secure source, never a general-purpose PRNG."],
+["high","Modern algorithms and modes only. No ECB, no MD5 or SHA-1 for security purposes, no hardcoded IVs."],
+["high","TLS certificate verification is enabled. Every verify=False, rejectUnauthorized:false, and InsecureSkipVerify is removed."]]],
+["Error handling and failure behavior",[
+["blocking","Failures fail closed. When an authorization check, token validation, or policy call errors, the result is denial, not a fallthrough to allow."],
+["high","Errors returned to clients carry no stack traces, query fragments, file paths, or internal hostnames."],
+["high","No empty or blanket catch blocks. Generated code swallows exceptions to make a function work; each one hides a failure mode."],
+["high","Logs contain no secrets, tokens, full request bodies, or personal data."],
+["track","New failure paths emit something observable. A silent degradation is worse than an error."]]],
+["Concurrency, resources, and limits",[
+["high","Shared mutable state accessed from concurrent paths is protected. Check-then-act sequences on balances, quotas, inventory, and idempotency keys are the usual sites."],
+["high","Every outbound network call has a timeout. Defaults in most HTTP clients are unbounded."],
+["high","Connections, file handles, and spawned workers are released on every path, including error paths."],
+["high","Expensive endpoints and authentication endpoints are rate limited."],
+["track","Loops, recursion, and pagination over user-controlled input have a bound."]]],
+["Data handling",[
+["blocking","No data leaves for an endpoint, analytics service, or SDK that the model introduced and nobody asked for."],
+["high","API responses return only the fields the client needs. Generated serializers commonly expose the entire model, including internal flags and adjacent user data."],
+["high","Personal data introduced by this change is accounted for under whatever regime applies to you, including retention and deletion."],
+["high","Deletion deletes. Soft-delete that leaves data reachable through another query path is not deletion."]]],
+["If the system itself calls an LLM",[
+["blocking","Model output is treated as untrusted input. It does not reach eval, exec, a shell, a SQL string, or a template without the handling any user input would get."],
+["blocking","Side-effectful tool calls are gated by policy or human approval rather than decided by the model alone. Retrieved documents, pages, and emails can carry instructions."],
+["high","Prompts assembled from user input keep a clear boundary between instruction and data — and the system does not rely on that boundary alone for security."],
+["high","Token, cost, and request-rate limits exist per user and in aggregate."],
+["track","Prompts and responses stored for debugging fall under the same data-handling rules as anything else."]]],
+["Tests",[
+["high","Tests assert behavior, not that a function returns without throwing."],
+["high","Negative cases exist: unauthorized caller, malformed input, missing resource, downstream failure."],
+["high","Tests were not written to match the implementation's bug. Read the assertion against the requirement, not against the code."],
+["track","The failure branches the model wrote are exercised by something."]]],
+["Provenance and licensing",[
+["high","Substantial verbatim blocks are checked against public sources. Models reproduce training data, and some of it is copyleft."],
+["track","Your organization's position on AI-generated code is recorded where reviewers can see it, and the PR states what was generated."]]],
+["Before merge",[
+["blocking","A named human who understands the system owns this change and can explain each decision in it."],
+["blocking","The diff is small enough to be reviewed. A 2,000-line agent-generated PR is not reviewed by anyone; split it."],
+["high","Automated gates passed, and failures were fixed rather than suppressed."],
+["high","Anything deferred is written down as an issue, with a severity and an owner."]]]
+];
+
+const KEY="aicsc.v1";
+const list=document.getElementById("list");
+let state={};
+try{state=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){state={}}
+
+DATA.forEach((sec,si)=>{
+  const s=document.createElement("section");
+  s.innerHTML='<h2><span class="n">'+(si+1)+'</span>'+sec[0]+'</h2>';
+  sec[1].forEach((it,ii)=>{
+    const id="i"+si+"-"+ii;
+    const d=document.createElement("div");
+    d.className="item";
+    d.dataset.sev=it[0];
+    d.innerHTML='<input type="checkbox" id="'+id+'"><label for="'+id+'">'+
+      '<span class="sev sev-'+it[0]+'">'+it[0].charAt(0).toUpperCase()+it[0].slice(1)+'</span>'+it[1]+'</label>';
+    const box=d.querySelector("input");
+    if(state[id]){box.checked=true;d.classList.add("done")}
+    box.addEventListener("change",()=>{
+      d.classList.toggle("done",box.checked);
+      if(box.checked){state[id]=1}else{delete state[id]}
+      save();tally();
+    });
+    s.appendChild(d);
+  });
+  list.appendChild(s);
+});
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+function tally(){
+  const vis=[...document.querySelectorAll(".item:not(.hidden) input")];
+  const n=vis.filter(b=>b.checked).length;
+  document.getElementById("done").textContent=n;
+  document.getElementById("total").textContent=vis.length;
+  document.getElementById("fill").style.width=vis.length?(n/vis.length*100)+"%":"0";
+}
+document.querySelectorAll(".filters button").forEach(b=>{
+  b.addEventListener("click",()=>{
+    const f=b.dataset.f;
+    document.querySelectorAll(".filters button").forEach(o=>o.setAttribute("aria-pressed",o===b));
+    document.querySelectorAll(".item").forEach(i=>i.classList.toggle("hidden",f!=="all"&&i.dataset.sev!==f));
+    tally();
+  });
+});
+document.getElementById("reset").addEventListener("click",()=>{
+  state={};save();
+  document.querySelectorAll(".item").forEach(i=>{i.querySelector("input").checked=false;i.classList.remove("done")});
+  tally();
+});
+tally();
+</script>
+</body>
+</html>
