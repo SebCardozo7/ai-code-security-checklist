@@ -2,7 +2,7 @@
 
 A review checklist for code written by LLMs and coding agents, aimed at the moment before it reaches production.
 
-**[Use the interactive version →](https://USERNAME.github.io/ai-code-security-checklist/)**
+**[Use the interactive version →](https://loop.github.io/ai-code-security-checklist/)**
 
 ---
 
