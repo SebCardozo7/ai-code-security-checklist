@@ -116,7 +116,7 @@ footer li{margin-bottom:.3rem}
   </div>
   <div id="list"></div>
 
-  <section>
+  <section id="automate">
     <h2><span class="n">12</span> Automate these</h2>
     <p>Run before human review. Everything here is mechanical, and catching it by eye wastes an engineer.</p>
     <table>
@@ -137,10 +137,10 @@ footer li{margin-bottom:.3rem}
   <ul>
     <li><a href="https://csrc.nist.gov/pubs/sp/800/218/final">NIST SP 800-218, Secure Software Development Framework</a></li>
     <li><a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/">OWASP Top 10 for LLM Applications</a></li>
-    <li><a href="https://loopstudio.dev/">What the NIST SSDF means for product teams</a> — LoopStudio</li>
-    <li><a href="https://loopstudio.dev/">Securing AI-built software before it goes to production</a> — LoopStudio</li>
+    <li><a href="https://loopstudio.dev/what-the-nist-ssdf-means-for-product-teams/">What the NIST SSDF means for product teams</a> — LoopStudio</li>
+    <li><a href="https://loopstudio.dev/securing-ai-built-software/">Securing AI-built software before it goes to production</a> — LoopStudio</li>
   </ul>
-  <p>MIT licensed. Corrections and additions welcome on <a href="https://github.com/USERNAME/ai-code-security-checklist">GitHub</a>.</p>
+  <p>MIT licensed. Corrections and additions welcome on <a href="https://github.com/SebCardozo7/ai-code-security-checklist">GitHub</a>.</p>
 </footer>
 
 <script>
@@ -224,7 +224,8 @@ try{state=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){state={}}
 
 DATA.forEach((sec,si)=>{
   const s=document.createElement("section");
-  s.innerHTML='<h2><span class="n">'+(si+1)+'</span>'+sec[0]+'</h2>';
+  const num=(si===DATA.length-1)?13:si+1;
+  s.innerHTML='<h2><span class="n">'+num+'</span>'+sec[0]+'</h2>';
   sec[1].forEach((it,ii)=>{
     const id="i"+si+"-"+ii;
     const d=document.createElement("div");
@@ -243,6 +244,9 @@ DATA.forEach((sec,si)=>{
   });
   list.appendChild(s);
 });
+
+const secs=list.querySelectorAll("section");
+list.insertBefore(document.getElementById("automate"),secs[secs.length-1]);
 
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 function tally(){

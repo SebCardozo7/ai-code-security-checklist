@@ -2,7 +2,7 @@
 
 A review checklist for code written by LLMs and coding agents, aimed at the moment before it reaches production.
 
-**[Use the interactive version →](https://loop.github.io/ai-code-security-checklist/)**
+**[Use the interactive version →](https://sebcardozo7.github.io/ai-code-security-checklist/)**
 
 ---
 
@@ -199,8 +199,8 @@ Corrections and additions are welcome, particularly failure modes observed in re
 
 - [NIST SP 800-218, Secure Software Development Framework](https://csrc.nist.gov/pubs/sp/800/218/final)
 - [OWASP Top 10 for Large Language Model Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
-- [What the NIST SSDF means for product teams](https://loopstudio.dev/) — LoopStudio
-- [Securing AI-built software before it goes to production](https://loopstudio.dev/) — LoopStudio
+- [What the NIST SSDF means for product teams](https://loopstudio.dev/what-the-nist-ssdf-means-for-product-teams/) — LoopStudio
+- [Securing AI-built software before it goes to production](https://loopstudio.dev/securing-ai-built-software/) — LoopStudio
 
 ## License
 
